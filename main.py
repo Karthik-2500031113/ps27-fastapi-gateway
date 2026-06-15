@@ -2,11 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 import requests
-import numpy as np
-
 from pymongo import MongoClient
-from sentence_transformers import SentenceTransformer
-from sklearn.metrics.pairwise import cosine_similarity
 
 app = FastAPI()
 
@@ -36,12 +32,6 @@ db = client["service_request_logs"]
 embeddings_collection = db["service_embeddings"]
 
 interaction_collection = db["interaction_history"]
-
-# ---------------- AI MODEL ---------------- #
-
-model = SentenceTransformer(
-    "all-MiniLM-L6-v2"
-)
 
 # ---------------- HOME ---------------- #
 
@@ -108,7 +98,7 @@ def resolve_request(id: int):
 @app.delete("/requests/{id}")
 def delete_request(id: int):
 
-    response = requests.delete(
+    requests.delete(
         f"{SPRING_URL}/requests/{id}"
     )
 
@@ -150,90 +140,25 @@ def get_logs():
 
     return response.json()
 
-# ---------------- GENERATE EMBEDDING ---------------- #
+# ---------------- EMBEDDING DISABLED ---------------- #
 
 @app.post("/generate_embedding")
 def generate_embedding(data: dict):
 
-    text = data["text"]
-
-    embedding = model.encode(
-        text
-    ).tolist()
-
-    embeddings_collection.insert_one({
-
-        "requestId":
-        data["requestId"],
-
-        "text":
-        text,
-
-        "embedding":
-        embedding
-    })
-
     return {
-
         "message":
-        "Embedding Stored"
+        "Embedding service disabled on Render free tier"
     }
 
-# ---------------- SEMANTIC SEARCH ---------------- #
+# ---------------- SEMANTIC SEARCH DISABLED ---------------- #
 
 @app.post("/semantic_search")
 def semantic_search(data: dict):
 
-    query = data["query"]
-
-    interaction_collection.insert_one({
-
-        "query":
-        query
-    })
-
-    query_embedding = model.encode(
-        query
-    ).reshape(1, -1)
-
-    documents = list(
-        embeddings_collection.find()
-    )
-
-    results = []
-
-    for doc in documents:
-
-        similarity = cosine_similarity(
-
-            query_embedding,
-
-            np.array(
-                doc["embedding"]
-            ).reshape(1, -1)
-
-        )[0][0]
-
-        results.append({
-
-            "requestId":
-            doc["requestId"],
-
-            "text":
-            doc["text"],
-
-            "score":
-            float(similarity)
-        })
-
-    results.sort(
-
-        key=lambda x: x["score"],
-
-        reverse=True
-    )
-
-    return results[:5]
+    return {
+        "message":
+        "Semantic search disabled on Render free tier"
+    }
 
 # ---------------- AI CATEGORY ---------------- #
 
@@ -274,6 +199,9 @@ def categorize(data: dict):
         "category":
         "General"
     }
+
+# ---------------- USER ANALYTICS ---------------- #
+
 @app.get("/user-analytics")
 def user_analytics(email: str):
 
